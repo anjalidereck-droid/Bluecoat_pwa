@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Entrance Exam Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1f4f7b" />
+  <!-- Manifest for PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+
+<body>
+  <header class="app-header">
+    <h1>Entrance Exam Practice</h1>
+    <nav class="main-nav">
+      <button class="nav-btn" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="quiz">Quiz</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Simple dashboard view -->
+    <section id="view-dashboard" class="view active">
+      <h2>Welcome</h2>
+      <div class="cards-grid">
+        <article class="card">
+          <h3>Average Score</h3>
+          <p id="overall-score">0%</p>
+        </article>
+        <article class="card">
+          <h3>Total Questions Answered</h3>
+          <p id="overall-questions">0</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Basic quiz view -->
+    <section id="view-quiz" class="view">
+      <h2>Quiz</h2>
+      <div id="quiz-container" class="question-panel">
+        <p id="quiz-question"></p>
+        <div id="quiz-options"></div>
+      </div>
+      <p id="quiz-feedback" class="feedback"></p>
+      <button id="next-question" class="primary-btn">Next Question</button>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Entrance Exam Practice — For My Students</p>
+  </footer>
+
+  <!-- Question bank (plain script, attaches to window) -->
+  <script src="{{ url_for('static', filename='questions.js') }}"></script>
+  <!-- Main app logic -->
+  <script type="module" src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

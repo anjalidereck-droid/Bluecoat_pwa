@@ -1,0 +1,163 @@
+/* Global reset and base typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  background: #f4f6fb;
+  color: #1f2933;
+}
+
+/* Header and navigation */
+.app-header {
+  background: #1f4f7b;
+  color: #ffffff;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  font-size: 1.3rem;
+}
+
+.main-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: #ffffff;
+  color: #1f4f7b;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.nav-btn:hover {
+  background: #e0ecff;
+  transform: translateY(-1px);
+}
+
+/* Layout for main content */
+main {
+  padding: 1.5rem 2rem;
+}
+
+/* Views (simple SPA behaviour) */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+/* Dashboard cards */
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.card {
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  min-width: 180px;
+}
+
+.card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.card p {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* Quiz panel */
+.question-panel {
+  margin-top: 1rem;
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+#quiz-question {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+#quiz-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Answer buttons */
+.option-btn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d0d7e2;
+  background: #f9fafb;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.option-btn:hover {
+  background: #e5efff;
+}
+
+.option-btn.correct {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+
+.option-btn.wrong {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* Feedback text */
+.feedback {
+  margin-top: 0.75rem;
+  min-height: 1.2rem;
+}
+
+/* Primary button (Next Question) */
+.primary-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: #1f4f7b;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.primary-btn:hover {
+  background: #174065;
+  transform: translateY(-1px);
+}
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
