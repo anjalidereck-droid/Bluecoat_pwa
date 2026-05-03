@@ -1,3 +1,5 @@
+import questions from "./data/questions.js";
+
 bySubject.innerHTML = Object.entries(stats)
   .map(([s, v]) => {
     return `<li>${s}: ${Math.round((v.c / v.a) * 100)}% accuracy (${v.c}/${v.a})</li>`;
