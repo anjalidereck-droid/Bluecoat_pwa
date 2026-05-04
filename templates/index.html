@@ -5,10 +5,8 @@
   <title>Entrance Exam Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1f4f7b" />
-  <!-- Manifest for PWA -->
-  <link rel="manifest" href="/manifest.json" />
-  <!-- Main stylesheet -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="static/styles.css" />
 </head>
 
 <body>
@@ -21,7 +19,7 @@
   </header>
 
   <main>
-    <!-- Simple dashboard view -->
+    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view active">
       <h2>Welcome</h2>
       <div class="cards-grid">
@@ -36,13 +34,33 @@
       </div>
     </section>
 
-    <!-- Basic quiz view -->
+    <!-- QUIZ -->
     <section id="view-quiz" class="view">
       <h2>Quiz</h2>
+
+      <!-- Student name + Start -->
+      <div class="question-panel">
+        <label>
+          Student name:
+          <input type="text" id="student-name" placeholder="Enter your name" />
+        </label>
+        <button id="start-quiz" class="primary-btn">Start Quiz</button>
+      </div>
+
+      <!-- Status bar with timer -->
+      <div class="quiz-status">
+        <div class="status-item timer">
+          <span>Time</span>
+          <p id="quiz-timer">30</p>
+        </div>
+      </div>
+
+      <!-- Question + options -->
       <div id="quiz-container" class="question-panel">
         <p id="quiz-question"></p>
         <div id="quiz-options"></div>
       </div>
+
       <p id="quiz-feedback" class="feedback"></p>
       <button id="next-question" class="primary-btn">Next Question</button>
     </section>
@@ -52,9 +70,9 @@
     <p>Entrance Exam Practice — For My Students</p>
   </footer>
 
-  <!-- Question bank (plain script, attaches to window) -->
-  <script src="{{ url_for('static', filename='questions.js') }}"></script>
+  <!-- Question bank -->
+  <script src="static/questions.js"></script>
   <!-- Main app logic -->
-  <script type="module" src="{{ url_for('static', filename='app.js') }}"></script>
+  <script type="module" src="static/app.js"></script>
 </body>
 </html>
