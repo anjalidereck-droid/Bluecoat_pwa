@@ -225,14 +225,12 @@ function endTest() {
     ? Math.round((totalCorrect / totalAnswered) * 100)
     : 0;
 
-  // Fun pop-up summary
   alert(
     `🏁 End of test, ${currentStudent || "superstar"}!\n\n` +
       `You scored ${totalCorrect} out of ${totalAnswered}.\n` +
       `That's ${pct}%. Well done!`
   );
 
-  // Optional: disable Next button so they can't keep going
   if (nextBtn) nextBtn.disabled = true;
 }
 
@@ -262,7 +260,6 @@ if (startBtn) {
       nextBtn.style.display = "inline-block";
     }
 
-    // First question
     showQuestion();
   });
 }
