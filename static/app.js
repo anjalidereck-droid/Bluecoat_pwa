@@ -1,6 +1,10 @@
 // app.js
-// Front-end logic for navigation, quiz flow, and sending results
-// to the Flask backend example API.
+// Entrance Exam Practice PWA
+// Friendly 50-question quiz for 10-year-olds.
+
+// --------------------
+// VIEW SWITCHING (Dashboard / Quiz)
+// --------------------
 
 const views = document.querySelectorAll(".view");
 const navButtons = document.querySelectorAll(".nav-btn");
@@ -9,15 +13,37 @@ navButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const viewName = btn.dataset.view;
     views.forEach(v => v.classList.remove("active"));
-    document.getElementById(`view-${viewName}`).classList.add("active");
+    const target = document.getElementById(`view-${viewName}`);
+    if (target) target.classList.add("active");
   });
 });
 
-// Quiz state
+// --------------------
+// QUIZ CONFIG
+// --------------------
+
+// Subject order: 15 maths, 15 english, 10 verbal, 10 non-verbal
+const SUBJECT_SEQUENCE = [
+  ...Array(15).fill("maths"),
+  ...Array(15).fill("english"),
+  ...Array(10).fill("verbal_reasoning"),
+  ...Array(10).fill("non_verbal_reasoning")
+];
+
+const MAX_QUESTIONS = SUBJECT_SEQUENCE.length; // 50
+
+// --------------------
+// QUIZ STATE
+// --------------------
+
+// Questions come from static/questions.js
 const questions = window.QUESTION_BANK || [];
-let currentIndex = 0;
+
+let currentQuestionIndex = null; // index in questions[]
+let questionsAsked = 0;
 let totalAnswered = 0;
 let totalCorrect = 0;
+let currentStudent = "";
 
 // DOM references
 const qText = document.getElementById("quiz-question");
@@ -27,89 +53,237 @@ const nextBtn = document.getElementById("next-question");
 const overallScore = document.getElementById("overall-score");
 const overallQuestions = document.getElementById("overall-questions");
 
-// Render a question on the page
+const nameInput = document.getElementById("student-name");
+const startBtn = document.getElementById("start-quiz");
+
+// --------------------
+// TIMER STATE & FUNCTIONS
+// --------------------
+
+let timerId = null;
+let timeLeft = 30;
+
+function updateTimerDisplay() {
+  const timerEl = document.getElementById("quiz-timer");
+  if (timerEl) {
+    timerEl.textContent = timeLeft;
+  }
+}
+
+function startTimer() {
+  clearInterval(timerId);
+  timeLeft = 30;
+  updateTimerDisplay();
+
+  timerId = setInterval(() => {
+    timeLeft -= 1;
+    updateTimerDisplay();
+
+    if (timeLeft <= 0) {
+      clearInterval(timerId);
+      handleTimeOut();
+    }
+  }, 1000);
+}
+
+function handleTimeOut() {
+  if (qFeedback) {
+    qFeedback.textContent = "⏰ Time's up! Click Next Question.";
+  }
+  const optionButtons = document.querySelectorAll("#quiz-options .option-btn");
+  optionButtons.forEach(btn => (btn.disabled = true));
+
+  totalAnswered += 1;
+  updateDashboard();
+}
+
+// --------------------
+// HELPER: pick question for current subject
+// --------------------
+
+function pickQuestionForCurrentSubject() {
+  if (!questions.length) return null;
+
+  const subject = SUBJECT_SEQUENCE[questionsAsked]; // which subject we need now
+
+  // Filter questions matching this subject
+  const pool = questions.filter(q => q.subject === subject);
+
+  if (!pool.length) {
+    // Fallback: if no questions for this subject, use all questions
+    return questions[Math.floor(Math.random() * questions.length)];
+  }
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// --------------------
+// RENDER QUESTION
+// --------------------
+
 function showQuestion() {
-  if (!questions.length) {
-    qText.textContent = "No questions available yet.";
-    qOptions.innerHTML = "";
-    nextBtn.disabled = true;
+  // If we've already asked 50, end test
+  if (questionsAsked >= MAX_QUESTIONS) {
+    endTest();
     return;
   }
 
-  if (currentIndex >= questions.length) {
-    currentIndex = 0; // loop round for now
+  if (!questions.length) {
+    if (qText) qText.textContent = "No questions available yet.";
+    if (qOptions) qOptions.innerHTML = "";
+    if (nextBtn) nextBtn.disabled = true;
+    return;
   }
 
-  const q = questions[currentIndex];
-  qText.textContent = q.text;
-  qOptions.innerHTML = "";
-  qFeedback.textContent = "";
+  const chosen = pickQuestionForCurrentSubject();
+  if (!chosen) {
+    if (qText) qText.textContent = "No questions available yet.";
+    return;
+  }
 
+  // Remember which question this is (index in full array)
+  currentQuestionIndex = questions.indexOf(chosen);
+
+  const q = chosen;
+
+  // Friendly prompt
+  if (qText) qText.textContent = q.text;
+
+  // Clear old options and feedback
+  if (qOptions) qOptions.innerHTML = "";
+  if (qFeedback) qFeedback.textContent = "";
+
+  // Make fun, clickable option buttons
   q.options.forEach((opt, idx) => {
     const btn = document.createElement("button");
     btn.textContent = opt;
     btn.className = "option-btn";
-    btn.addEventListener("click", () => handleAnswer(idx, btn));
+    btn.addEventListener("click", () => handleAnswer(idx));
     qOptions.appendChild(btn);
   });
+
+  // Start timer for this question
+  startTimer();
+
+  // Count this question as asked
+  questionsAsked += 1;
 }
 
-// Handle a student answer
-function handleAnswer(chosenIndex, clickedButton) {
-  const q = questions[currentIndex];
+// --------------------
+// HANDLE ANSWERS
+// --------------------
+
+function handleAnswer(chosenIndex) {
+  clearInterval(timerId);
+
+  const q = questions[currentQuestionIndex];
+  if (!q) return;
+
   const buttons = qOptions.querySelectorAll(".option-btn");
 
-  // Lock all buttons and show correct/wrong styles
-  buttons.forEach((b, i) => {
-    if (i === q.correctIndex) b.classList.add("correct");
-    if (i === chosenIndex && i !== q.correctIndex) b.classList.add("wrong");
-    b.disabled = true;
+  buttons.forEach((btn, i) => {
+    if (i === q.correctIndex) btn.classList.add("correct");
+    if (i === chosenIndex && i !== q.correctIndex) btn.classList.add("wrong");
+    btn.disabled = true;
   });
 
   const isCorrect = chosenIndex === q.correctIndex;
   totalAnswered += 1;
   if (isCorrect) {
     totalCorrect += 1;
-    qFeedback.textContent = "Correct!";
+    if (qFeedback) qFeedback.textContent = "🎉 Brilliant! That's correct!";
   } else {
-    qFeedback.textContent = "Not quite — keep going!";
+    if (qFeedback) qFeedback.textContent = "Almost there! Try the next one 💪";
   }
 
-  // Update dashboard
+  updateDashboard();
+
+  // If that was the last question, end the test right away
+  if (questionsAsked >= MAX_QUESTIONS) {
+    endTest();
+  }
+}
+
+// --------------------
+// DASHBOARD
+// --------------------
+
+function updateDashboard() {
   const pct = Math.round((totalCorrect / totalAnswered) * 100);
-  overallScore.textContent = `${isNaN(pct) ? 0 : pct}%`;
-  overallQuestions.textContent = totalAnswered.toString();
-
-  // Optionally send the result to the Flask backend
-  sendResultToBackend(isCorrect);
+  if (overallScore) overallScore.textContent = `${isNaN(pct) ? 0 : pct}%`;
+  if (overallQuestions) overallQuestions.textContent = totalAnswered.toString();
 }
 
-// Go to next question
-nextBtn.addEventListener("click", () => {
-  currentIndex += 1;
-  showQuestion();
-});
+// --------------------
+// END OF TEST
+// --------------------
 
-// Send result to Python API (optional; uses /api/submit_result)
-async function sendResultToBackend(isCorrect) {
-  try {
-    await fetch("/api/submit_result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ correct: isCorrect })
-    });
-  } catch (err) {
-    // For now, just log any error; the quiz still works without backend
-    console.error("Error sending result to backend:", err);
-  }
+function endTest() {
+  clearInterval(timerId);
+
+  const pct = totalAnswered
+    ? Math.round((totalCorrect / totalAnswered) * 100)
+    : 0;
+
+  // Fun pop-up summary
+  alert(
+    `🏁 End of test, ${currentStudent || "superstar"}!\n\n` +
+      `You scored ${totalCorrect} out of ${totalAnswered}.\n` +
+      `That's ${pct}%. Well done!`
+  );
+
+  // Optional: disable Next button so they can't keep going
+  if (nextBtn) nextBtn.disabled = true;
 }
 
-// Initial render
-showQuestion();
+// --------------------
+// BUTTON HANDLERS
+// --------------------
 
-// Register the service worker for PWA behaviour
+// Start Quiz: ask for a friendly name first
+if (startBtn) {
+  startBtn.addEventListener("click", () => {
+    const name = nameInput ? nameInput.value.trim() : "";
+    if (!name) {
+      alert("Please type your name so we know who the quiz champion is!");
+      return;
+    }
+    currentStudent = name;
+
+    // Reset everything for a fresh 50-question test
+    questionsAsked = 0;
+    totalAnswered = 0;
+    totalCorrect = 0;
+    currentQuestionIndex = null;
+    if (overallScore) overallScore.textContent = "0%";
+    if (overallQuestions) overallQuestions.textContent = "0";
+    if (nextBtn) {
+      nextBtn.disabled = false;
+      nextBtn.style.display = "inline-block";
+    }
+
+    // First question
+    showQuestion();
+  });
+}
+
+// Next Question: move to the next one
+if (nextBtn) {
+  nextBtn.addEventListener("click", () => {
+    showQuestion();
+  });
+}
+
+// --------------------
+// PWA: REGISTER SERVICE WORKER (OPTIONAL)
+// --------------------
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service_worker.js");
+    navigator.serviceWorker
+      .register("static/service_worker.js")
+      .catch(err => {
+        console.warn("Service worker registration failed:", err);
+      });
   });
 }
