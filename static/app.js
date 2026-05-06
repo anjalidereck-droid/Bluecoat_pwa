@@ -1,11 +1,8 @@
-// app.js
-// Entrance Exam Practice PWA
-// Friendly 50-question quiz for 10-year-olds.
+// static/app.js
+// 11+ Blue Coat practice quiz
+// 15-second timer, simple adaptive difficulty, sends stats to Flask.
 
-// --------------------
-// VIEW SWITCHING (Dashboard / Quiz)
-// --------------------
-
+// ---------- VIEW SWITCHING ----------
 const views = document.querySelectorAll(".view");
 const navButtons = document.querySelectorAll(".nav-btn");
 
@@ -18,269 +15,262 @@ navButtons.forEach(btn => {
   });
 });
 
-// --------------------
-// QUIZ CONFIG
-// --------------------
+// ---------- CONFIG ----------
+const ALL_QUESTIONS = window.QUESTION_BANK || [];
+const TIME_PER_QUESTION = 15; // seconds
+const MAX_QUESTIONS = Math.min(20, ALL_QUESTIONS.length); // mini test
 
-// Subject order: 15 maths, 15 english, 10 verbal, 10 non-verbal
-const SUBJECT_SEQUENCE = [
-  ...Array(15).fill("maths"),
-  ...Array(15).fill("english"),
-  ...Array(10).fill("verbal_reasoning"),
-  ...Array(10).fill("non_verbal_reasoning")
-];
+// ---------- ADAPTIVE SETUP ----------
+let currentLevel = 2; // difficulty 1..5
 
-const MAX_QUESTIONS = SUBJECT_SEQUENCE.length; // 50
+function pickQuestionNearLevel(askedIds, level) {
+  const unused = ALL_QUESTIONS.filter(q => !askedIds.has(q.id));
+  if (!unused.length) return null;
 
-// --------------------
-// QUIZ STATE
-// --------------------
+  let pool = unused.filter(q => q.difficulty === level);
+  if (!pool.length) {
+    let diff = 1;
+    while (!pool.length && diff <= 3) {
+      pool = unused.filter(
+        q =>
+          q.difficulty === level - diff || q.difficulty === level + diff
+      );
+      diff += 1;
+    }
+  }
+  if (!pool.length) pool = unused;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
-// Questions come from static/questions.js
-const questions = window.QUESTION_BANK || [];
+// ---------- STATE ----------
+let studentName = "";
+let askedIds = new Set();
+let currentQuestion = null;
+let currentIndex = 0;
 
-let currentQuestionIndex = null; // index in questions[]
-let questionsAsked = 0;
 let totalAnswered = 0;
 let totalCorrect = 0;
-let currentStudent = "";
 
-// DOM references
+let timerId = null;
+let timeLeft = TIME_PER_QUESTION;
+let questionStartTime = null;
+
+// DOM
+const nameInput = document.getElementById("student-name");
+const startBtn = document.getElementById("start-quiz");
 const qText = document.getElementById("quiz-question");
 const qOptions = document.getElementById("quiz-options");
 const qFeedback = document.getElementById("quiz-feedback");
 const nextBtn = document.getElementById("next-question");
+const timerEl = document.getElementById("quiz-timer");
 const overallScore = document.getElementById("overall-score");
 const overallQuestions = document.getElementById("overall-questions");
 
-const nameInput = document.getElementById("student-name");
-const startBtn = document.getElementById("start-quiz");
+// ---------- OPTIONAL PROGRESS BAR (safe if missing) ----------
+const progressText = document.getElementById("progress-text");
+const progressBarInner = document.getElementById("progress-bar-inner");
 
-// --------------------
-// TIMER STATE & FUNCTIONS
-// --------------------
-
-let timerId = null;
-let timeLeft = 30;
-
-function updateTimerDisplay() {
-  const timerEl = document.getElementById("quiz-timer");
-  if (timerEl) {
-    timerEl.textContent = timeLeft;
-  }
+function updateProgress() {
+  if (!progressText || !progressBarInner) return;
+  progressText.textContent = `Question ${Math.min(
+    currentIndex + 1,
+    MAX_QUESTIONS
+  )} of ${MAX_QUESTIONS}`;
+  const pct = (currentIndex / MAX_QUESTIONS) * 100;
+  progressBarInner.style.width = `${pct}%`;
 }
 
-function startTimer() {
+// ---------- HELPERS ----------
+function updateDashboard() {
+  const pct = totalAnswered
+    ? Math.round((totalCorrect / totalAnswered) * 100)
+    : 0;
+  if (overallScore) overallScore.textContent = `${pct}%`;
+  if (overallQuestions) overallQuestions.textContent = totalAnswered.toString();
+}
+
+function lockOptions() {
+  const buttons = qOptions.querySelectorAll("button");
+  buttons.forEach(b => (b.disabled = true));
+}
+
+function resetTimer() {
   clearInterval(timerId);
-  timeLeft = 30;
-  updateTimerDisplay();
+  timeLeft = TIME_PER_QUESTION;
+  timerEl.textContent = timeLeft;
+
+  questionStartTime = performance.now();
 
   timerId = setInterval(() => {
     timeLeft -= 1;
-    updateTimerDisplay();
+    timerEl.textContent = timeLeft;
 
     if (timeLeft <= 0) {
       clearInterval(timerId);
-      handleTimeOut();
+      timeoutQuestion();
     }
   }, 1000);
 }
 
-function handleTimeOut() {
-  if (qFeedback) {
-    qFeedback.textContent = "⏰ Time's up! Click Next Question.";
-  }
-  const optionButtons = document.querySelectorAll("#quiz-options .option-btn");
-  optionButtons.forEach(btn => (btn.disabled = true));
-
-  totalAnswered += 1;
-  updateDashboard();
+function calcTimeTaken() {
+  if (questionStartTime == null) return TIME_PER_QUESTION;
+  const ms = performance.now() - questionStartTime;
+  return Math.round(ms / 100) / 10; // e.g. 7.3 s
 }
 
-// --------------------
-// HELPER: pick question for current subject
-// --------------------
+// ---------- BACKEND API ----------
+async function sendResultToServer(correct, question) {
+  const payload = {
+    question_id: question?.id ?? null,
+    subject: question?.subject ?? null,
+    difficulty: question?.difficulty ?? null,
+    correct,
+    time_taken: calcTimeTaken(),
+    student_name: studentName || null
+  };
 
-function pickQuestionForCurrentSubject() {
-  if (!questions.length) return null;
-
-  const subject = SUBJECT_SEQUENCE[questionsAsked]; // which subject we need now
-
-  // Filter questions matching this subject
-  const pool = questions.filter(q => q.subject === subject);
-
-  if (!pool.length) {
-    // Fallback: if no questions for this subject, use all questions
-    return questions[Math.floor(Math.random() * questions.length)];
+  try {
+    await fetch("/api/submit_result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn("Could not send result to server", err);
   }
-
-  return pool[Math.floor(Math.random() * pool.length)];
 }
 
-// --------------------
-// RENDER QUESTION
-// --------------------
-
+// ---------- CORE FLOW ----------
 function showQuestion() {
-  // If we've already asked 50, end test
-  if (questionsAsked >= MAX_QUESTIONS) {
+  if (currentIndex >= MAX_QUESTIONS) {
     endTest();
     return;
   }
 
-  if (!questions.length) {
-    if (qText) qText.textContent = "No questions available yet.";
-    if (qOptions) qOptions.innerHTML = "";
-    if (nextBtn) nextBtn.disabled = true;
+  const nextQ = pickQuestionNearLevel(askedIds, currentLevel);
+  if (!nextQ) {
+    endTest();
     return;
   }
 
-  const chosen = pickQuestionForCurrentSubject();
-  if (!chosen) {
-    if (qText) qText.textContent = "No questions available yet.";
-    return;
-  }
+  currentQuestion = nextQ;
+  askedIds.add(nextQ.id);
+  currentIndex += 1;
 
-  // Remember which question this is (index in full array)
-  currentQuestionIndex = questions.indexOf(chosen);
+  qFeedback.textContent = "";
+  nextBtn.disabled = true;
 
-  const q = chosen;
+  qText.textContent = `Q${currentIndex}. ${nextQ.text}`;
 
-  // Friendly prompt
-  if (qText) qText.textContent = q.text;
-
-  // Clear old options and feedback
-  if (qOptions) qOptions.innerHTML = "";
-  if (qFeedback) qFeedback.textContent = "";
-
-  // Make fun, clickable option buttons
-  q.options.forEach((opt, idx) => {
+  qOptions.innerHTML = "";
+  nextQ.options.forEach((opt, idx) => {
     const btn = document.createElement("button");
-    btn.textContent = opt;
     btn.className = "option-btn";
+    btn.textContent = opt;
     btn.addEventListener("click", () => handleAnswer(idx));
     qOptions.appendChild(btn);
   });
 
-  // Start timer for this question
-  startTimer();
-
-  // Count this question as asked
-  questionsAsked += 1;
+  updateProgress();
+  resetTimer();
 }
 
-// --------------------
-// HANDLE ANSWERS
-// --------------------
+async function timeoutQuestion() {
+  lockOptions();
+  qFeedback.textContent =
+    "⏰ Time's up! This question scores 0. The next one will be a bit easier.";
 
-function handleAnswer(chosenIndex) {
+  totalAnswered += 1;
+  updateDashboard();
+
+  currentLevel = Math.max(1, currentLevel - 1);
+  await sendResultToServer(false, currentQuestion);
+
+  if (currentIndex >= MAX_QUESTIONS) {
+    setTimeout(endTest, 800);
+  } else {
+    nextBtn.disabled = false;
+  }
+}
+
+async function handleAnswer(chosenIndex) {
   clearInterval(timerId);
+  if (!currentQuestion) return;
 
-  const q = questions[currentQuestionIndex];
-  if (!q) return;
+  const correct = chosenIndex === currentQuestion.correctIndex;
 
-  const buttons = qOptions.querySelectorAll(".option-btn");
-
-  buttons.forEach((btn, i) => {
-    if (i === q.correctIndex) btn.classList.add("correct");
-    if (i === chosenIndex && i !== q.correctIndex) btn.classList.add("wrong");
+  const buttons = qOptions.querySelectorAll("button");
+  buttons.forEach((btn, idx) => {
     btn.disabled = true;
+    if (idx === currentQuestion.correctIndex) {
+      btn.classList.add("correct");
+    }
+    if (idx === chosenIndex && !correct) {
+      btn.classList.add("wrong");
+    }
   });
 
-  const isCorrect = chosenIndex === q.correctIndex;
   totalAnswered += 1;
-  if (isCorrect) {
+  if (correct) {
     totalCorrect += 1;
-    if (qFeedback) qFeedback.textContent = "🎉 Brilliant! That's correct!";
+    qFeedback.textContent =
+      "🎉 Brilliant work! Get ready for a slightly trickier question.";
+    currentLevel = Math.min(5, currentLevel + 1);
   } else {
-    if (qFeedback) qFeedback.textContent = "Almost there! Try the next one 💪";
+    qFeedback.textContent =
+      "Nice try – this one scores 0. The next one will be a bit easier.";
+    currentLevel = Math.max(1, currentLevel - 1);
   }
 
   updateDashboard();
+  await sendResultToServer(correct, currentQuestion);
 
-  // If that was the last question, end the test right away
-  if (questionsAsked >= MAX_QUESTIONS) {
-    endTest();
+  if (currentIndex >= MAX_QUESTIONS) {
+    setTimeout(endTest, 800);
+  } else {
+    nextBtn.disabled = false;
   }
 }
 
-// --------------------
-// DASHBOARD
-// --------------------
-
-function updateDashboard() {
-  const pct = Math.round((totalCorrect / totalAnswered) * 100);
-  if (overallScore) overallScore.textContent = `${isNaN(pct) ? 0 : pct}%`;
-  if (overallQuestions) overallQuestions.textContent = totalAnswered.toString();
-}
-
-// --------------------
-// END OF TEST
-// --------------------
-
 function endTest() {
   clearInterval(timerId);
+  lockOptions();
+  nextBtn.disabled = true;
 
   const pct = totalAnswered
     ? Math.round((totalCorrect / totalAnswered) * 100)
     : 0;
 
   alert(
-    `🏁 End of test, ${currentStudent || "superstar"}!\n\n` +
-      `You scored ${totalCorrect} out of ${totalAnswered}.\n` +
-      `That's ${pct}%. Well done!`
+    `🏁 Test finished, ${studentName || "superstar"}!\n\n` +
+      `You answered ${totalCorrect} out of ${totalAnswered} questions correctly.\n` +
+      `Score: ${pct}%\n\nAmazing effort – you are getting Blue Coat–ready!`
   );
-
-  if (nextBtn) nextBtn.disabled = true;
 }
 
-// --------------------
-// BUTTON HANDLERS
-// --------------------
-
-// Start Quiz: ask for a friendly name first
+// ---------- EVENT HANDLERS ----------
 if (startBtn) {
   startBtn.addEventListener("click", () => {
-    const name = nameInput ? nameInput.value.trim() : "";
+    const name = nameInput.value.trim();
     if (!name) {
-      alert("Please type your name so we know who the quiz champion is!");
+      alert("Please type your name so the quiz can cheer you on!");
       return;
     }
-    currentStudent = name;
+    studentName = name;
 
-    // Reset everything for a fresh 50-question test
-    questionsAsked = 0;
+    askedIds = new Set();
+    currentIndex = 0;
     totalAnswered = 0;
     totalCorrect = 0;
-    currentQuestionIndex = null;
-    if (overallScore) overallScore.textContent = "0%";
-    if (overallQuestions) overallQuestions.textContent = "0";
-    if (nextBtn) {
-      nextBtn.disabled = false;
-      nextBtn.style.display = "inline-block";
-    }
-
+    currentLevel = 2;
+    updateDashboard();
+    updateProgress();
     showQuestion();
   });
 }
 
-// Next Question: move to the next one
 if (nextBtn) {
   nextBtn.addEventListener("click", () => {
     showQuestion();
-  });
-}
-
-// --------------------
-// PWA: REGISTER SERVICE WORKER (OPTIONAL)
-// --------------------
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("static/service_worker.js")
-      .catch(err => {
-        console.warn("Service worker registration failed:", err);
-      });
   });
 }

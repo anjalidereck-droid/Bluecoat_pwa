@@ -4,11 +4,8 @@
   <meta charset="UTF-8" />
   <title>Entrance Exam Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#1f4f7b" />
-  <!-- Manifest for PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <!-- Main stylesheet -->
-  <link rel="stylesheet" href="static/styles.css" />
+  <!-- colourful kid-friendly CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 
 <body>
@@ -21,7 +18,7 @@
   </header>
 
   <main>
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD VIEW -->
     <section id="view-dashboard" class="view active">
       <h2>Welcome</h2>
       <div class="cards-grid">
@@ -36,11 +33,11 @@
       </div>
     </section>
 
-    <!-- QUIZ -->
+    <!-- QUIZ VIEW -->
     <section id="view-quiz" class="view">
       <h2>Quiz Time!</h2>
 
-      <!-- Student name + Start -->
+      <!-- name + start button -->
       <div class="question-panel">
         <label>
           Quiz hero name:
@@ -53,22 +50,22 @@
         <button id="start-quiz" class="primary-btn">Start Quiz</button>
       </div>
 
-      <!-- Status bar with timer (styled to appear on the right in CSS) -->
+      <!-- timer on the right -->
       <div class="quiz-status">
         <div class="status-item timer">
-          <span>Time left</span>
-          <p id="quiz-timer">30</p>
+          <span>Time left (s)</span>
+          <p id="quiz-timer">15</p>
         </div>
       </div>
 
-      <!-- Question + options -->
+      <!-- question + options -->
       <div id="quiz-container" class="question-panel">
         <p id="quiz-question"></p>
         <div id="quiz-options"></div>
       </div>
 
       <p id="quiz-feedback" class="feedback"></p>
-      <button id="next-question" class="primary-btn">Next Question</button>
+      <button id="next-question" class="primary-btn" disabled>Next Question</button>
     </section>
   </main>
 
@@ -76,9 +73,8 @@
     <p>Entrance Exam Practice — For My Students</p>
   </footer>
 
-  <!-- Question bank -->
-  <script src="static/questions.js"></script>
-  <!-- Main app logic -->
-  <script type="module" src="static/app.js"></script>
+  <!-- question bank + quiz logic -->
+  <script src="{{ url_for('static', filename='questions.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}" type="module"></script>
 </body>
 </html>

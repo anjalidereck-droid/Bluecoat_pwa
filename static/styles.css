@@ -1,4 +1,4 @@
-/* Global reset and base typography */
+/* Base */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,24 +7,26 @@
 }
 
 body {
-  background: #f4f6fb;
+  background: linear-gradient(135deg, #fff9c4, #e3f2fd);
   color: #1f2933;
 }
 
-/* Header and navigation */
+/* Header */
 .app-header {
-  background: #1f4f7b;
+  background: linear-gradient(90deg, #1565c0, #42a5f5);
   color: #ffffff;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 3px 10px rgba(13, 35, 69, 0.5);
 }
 
 .app-header h1 {
-  font-size: 1.3rem;
+  font-size: 1.6rem;
 }
 
+/* Nav buttons */
 .main-nav {
   display: flex;
   gap: 0.5rem;
@@ -32,26 +34,29 @@ body {
 
 .nav-btn {
   background: #ffffff;
-  color: #1f4f7b;
+  color: #1565c0;
   border: none;
-  padding: 0.4rem 0.9rem;
+  padding: 0.45rem 0.9rem;
   border-radius: 999px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
 }
 
 .nav-btn:hover {
-  background: #e0ecff;
+  background: #e3f2fd;
   transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Layout for main content */
+/* Layout */
 main {
   padding: 1.5rem 2rem;
 }
 
-/* Views (simple SPA behaviour) */
+/* Views */
 .view {
   display: none;
 }
@@ -71,9 +76,10 @@ main {
 .card {
   background: #ffffff;
   padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
   min-width: 180px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  border-top: 5px solid #66bb6a;
 }
 
 .card h3 {
@@ -82,8 +88,34 @@ main {
 }
 
 .card p {
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* Quiz status (timer) */
+.quiz-status {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-item {
+  background: #ffffff;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-item span {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.status-item p {
+  font-weight: 700;
 }
 
 /* Quiz panel */
@@ -91,8 +123,22 @@ main {
   margin-top: 1rem;
   background: #ffffff;
   padding: 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.question-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+#student-name {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 2px solid #bbdefb;
 }
 
 #quiz-question {
@@ -100,58 +146,74 @@ main {
   margin-bottom: 0.75rem;
 }
 
+/* Options */
 #quiz-options {
   display: grid;
   gap: 0.5rem;
 }
 
-/* Answer buttons */
 .option-btn {
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid #d0d7e2;
-  background: #f9fafb;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  border: none;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  font-size: 0.95rem;
+  color: #1f2933;
+  background: linear-gradient(90deg, #ffecb3, #ffe082);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+}
+
+.option-btn:nth-child(2n) {
+  background: linear-gradient(90deg, #c8e6c9, #a5d6a7);
+}
+
+.option-btn:nth-child(3n) {
+  background: linear-gradient(90deg, #b3e5fc, #81d4fa);
 }
 
 .option-btn:hover {
-  background: #e5efff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.05);
 }
 
 .option-btn.correct {
-  background: #dcfce7;
-  border-color: #16a34a;
+  background: #c8e6c9;
+  border: 2px solid #2e7d32;
 }
 
 .option-btn.wrong {
-  background: #fee2e2;
-  border-color: #dc2626;
+  background: #ffcdd2;
+  border: 2px solid #c62828;
 }
 
-/* Feedback text */
+/* Feedback + buttons */
 .feedback {
-  margin-top: 0.75rem;
-  min-height: 1.2rem;
+  margin-top: 0.7rem;
+  min-height: 1.3rem;
+  font-size: 0.95rem;
 }
 
-/* Primary button (Next Question) */
 .primary-btn {
   margin-top: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.1rem;
   border-radius: 999px;
   border: none;
-  background: #1f4f7b;
+  background: #43a047;
   color: #ffffff;
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
 }
 
 .primary-btn:hover {
-  background: #174065;
+  background: #2e7d32;
   transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* Footer */
@@ -160,4 +222,27 @@ main {
   padding: 1rem;
   font-size: 0.85rem;
   color: #6b7280;
+}
+/* Progress bar */
+.progress-text {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.progress-bar-outer {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar-inner {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #43a047, #ffb300);
+  transition: width 0.25s ease-out;
 }
